@@ -1,0 +1,816 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MoodTunes - Vibe to Music</title>
+  <style>
+    :root {
+      --spotify-black: #000000;
+      --spotify-dark-gray: #121212;
+      --spotify-gray: #1e1e1e;
+      --spotify-light-gray: #2a2a2a;
+      --spotify-green: #1db954;
+      --spotify-green-hover: #1ed760;
+      --spotify-white: #ffffff;
+      --spotify-text-gray: #b3b3b3;
+      --spotify-text-light: #ffffff;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    [data-theme="light"] {
+      --spotify-black: #ffffff;
+      --spotify-dark-gray: #f8f9fa;
+      --spotify-gray: #ffffff;
+      --spotify-light-gray: #f1f3f4;
+      --spotify-text-gray: #6a6a6a;
+      --spotify-text-light: #000000;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+      background: var(--spotify-black);
+      font-family: 'Circular', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      color: var(--spotify-text-light);
+      transition: var(--transition);
+    }
+
+    .wrapper {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      width: 100%;
+      padding: 1rem;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 800px;
+      background: var(--spotify-dark-gray);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: var(--transition);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      transform: translateY(20px);
+      animation: containerFadeIn 0.6s ease-out 0.3s forwards;
+    }
+
+    .welcome-modal {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1000;
+      opacity: 1;
+      transition: var(--transition);
+      backdrop-filter: blur(10px);
+    }
+
+    .welcome-modal.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    .welcome-content {
+      background: var(--spotify-dark-gray);
+      border-radius: 20px;
+      padding: 2rem;
+      max-width: 400px;
+      width: 90%;
+      text-align: center;
+      border: 1px solid var(--spotify-light-gray);
+      transform: scale(0.9);
+      animation: modalPop 0.4s ease-out forwards;
+    }
+
+    .welcome-logo {
+      font-size: 3rem;
+      margin-bottom: 1rem;
+      animation: bounce 2s infinite;
+    }
+
+    .welcome-title {
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: var(--spotify-green);
+      margin-bottom: 1rem;
+    }
+
+    .welcome-text {
+      color: var(--spotify-text-gray);
+      margin-bottom: 2rem;
+      line-height: 1.5;
+    }
+
+    .welcome-button {
+      background: var(--spotify-green);
+      color: var(--spotify-black);
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 50px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 1rem;
+    }
+
+    .welcome-button:hover {
+      background: var(--spotify-green-hover);
+      transform: scale(1.05);
+    }
+
+    .header {
+      padding: 2rem 2rem 1.5rem;
+      text-align: center;
+      position: relative;
+      background: linear-gradient(135deg, var(--spotify-dark-gray) 0%, var(--spotify-gray) 100%);
+    }
+
+    .theme-toggle {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      background: var(--spotify-light-gray);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 1.1rem;
+      color: var(--spotify-text-light);
+    }
+
+    .theme-toggle:hover {
+      background: var(--spotify-green);
+      transform: scale(1.1);
+    }
+
+    .logo {
+      font-size: 2.2rem;
+      font-weight: 900;
+      margin-bottom: 0.5rem;
+      color: var(--spotify-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+    }
+
+    .logo-icon {
+      font-size: 1.8rem;
+    }
+
+    .subtitle {
+      color: var(--spotify-text-gray);
+      font-size: 1rem;
+      line-height: 1.4;
+      font-weight: 400;
+      padding: 0 1rem;
+    }
+
+    .content {
+      padding: 1rem 0 1.5rem;
+    }
+
+    .step-indicator {
+      display: flex;
+      justify-content: center;
+      gap: 0.5rem;
+      margin-bottom: 1.5rem;
+      padding: 0 1rem;
+    }
+
+    .step-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--spotify-light-gray);
+      transition: var(--transition);
+    }
+
+    .step-dot.active {
+      background: var(--spotify-green);
+      transform: scale(1.2);
+    }
+
+    .mood-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 0.5rem;
+      padding: 0 1rem;
+    }
+
+    .mood-button {
+      width: 100%;
+      min-height: 100px;
+      border-radius: 12px;
+      border: 1px solid var(--spotify-light-gray);
+      background: var(--spotify-gray);
+      color: var(--spotify-text-light);
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.9rem;
+      font-weight: 600;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.25rem;
+      padding: 0.5rem 0.25rem;
+      opacity: 0;
+      transform: translateY(20px);
+      animation: moodButtonFadeIn 0.4s ease-out forwards;
+    }
+
+    .mood-button:nth-child(1) { animation-delay: 0.1s; }
+    .mood-button:nth-child(2) { animation-delay: 0.2s; }
+    .mood-button:nth-child(3) { animation-delay: 0.3s; }
+    .mood-button:nth-child(4) { animation-delay: 0.4s; }
+    .mood-button:nth-child(5) { animation-delay: 0.5s; }
+
+    .mood-button:hover {
+      transform: scale(1.05) translateY(-2px);
+      background: var(--spotify-light-gray);
+      border-color: var(--spotify-green);
+      box-shadow: 0 8px 25px rgba(29, 185, 84, 0.3);
+    }
+
+    .mood-button:active {
+      transform: scale(0.98);
+    }
+
+    .mood-button.selected {
+      border-color: var(--spotify-green);
+      background: var(--spotify-light-gray);
+      box-shadow: 0 0 0 2px var(--spotify-green);
+    }
+
+    .mood-emoji {
+      font-size: 2rem;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+      transition: var(--transition);
+    }
+
+    .mood-button:hover .mood-emoji {
+      transform: scale(1.1);
+    }
+
+    .mood-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      text-align: center;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      width: 100%;
+    }
+
+    .follow-up-section {
+      display: none;
+      padding: 0 1rem;
+      margin-top: 1.5rem;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: var(--transition);
+    }
+
+    .follow-up-section.show {
+      display: block;
+      animation: fadeInUp 0.4s ease-out forwards;
+    }
+
+    .follow-up-title {
+      text-align: center;
+      margin-bottom: 1rem;
+      color: var(--spotify-text-light);
+      font-weight: 600;
+    }
+
+    .intensity-slider {
+      width: 100%;
+      margin: 1rem 0;
+      -webkit-appearance: none;
+      appearance: none;
+      height: 6px;
+      border-radius: 3px;
+      background: var(--spotify-light-gray);
+      outline: none;
+    }
+
+    .intensity-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      background: var(--spotify-green);
+      cursor: pointer;
+      transition: var(--transition);
+    }
+
+    .intensity-slider::-webkit-slider-thumb:hover {
+      transform: scale(1.2);
+    }
+
+    .continue-button {
+      background: var(--spotify-green);
+      color: var(--spotify-black);
+      border: none;
+      padding: 0.75rem 2rem;
+      border-radius: 50px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: var(--transition);
+      width: 100%;
+      margin-top: 1rem;
+    }
+
+    .continue-button:hover {
+      background: var(--spotify-green-hover);
+      transform: scale(1.02);
+    }
+
+    .playlist-reveal {
+      display: none;
+      padding: 0 1.5rem;
+      opacity: 0;
+      transform: translateY(30px);
+    }
+
+    .playlist-reveal.show {
+      display: block;
+      animation: playlistReveal 0.6s ease-out forwards;
+    }
+
+    .playlist-card {
+      background: var(--spotify-gray);
+      border-radius: 12px;
+      padding: 1.5rem;
+      margin-bottom: 1rem;
+      border: 1px solid var(--spotify-light-gray);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .playlist-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(29, 185, 84, 0.1), transparent);
+      animation: shimmer 2s ease-out;
+    }
+
+    .playlist-title {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+
+    .playlist-description {
+      color: var(--spotify-text-gray);
+      font-size: 0.9rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .button-group {
+      display: flex;
+      gap: 0.75rem;
+      flex-direction: column;
+    }
+
+    .spotify-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      background: var(--spotify-green);
+      color: var(--spotify-black);
+      padding: 0.75rem 2rem;
+      border-radius: 50px;
+      font-weight: 700;
+      transition: var(--transition);
+      border: none;
+      cursor: pointer;
+      font-size: 0.95rem;
+      text-decoration: none;
+    }
+
+    .spotify-button:hover {
+      background: var(--spotify-green-hover);
+      transform: scale(1.02);
+    }
+
+    .share-buttons {
+      display: flex;
+      gap: 0.5rem;
+    }
+
+    .share-button {
+      flex: 1;
+      background: var(--spotify-light-gray);
+      color: var(--spotify-text-light);
+      border: 1px solid var(--spotify-light-gray);
+      padding: 0.5rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: var(--transition);
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+
+    .share-button:hover {
+      background: var(--spotify-gray);
+      border-color: var(--spotify-green);
+    }
+
+    .back-button {
+      background: transparent;
+      color: var(--spotify-text-gray);
+      border: 1px solid var(--spotify-light-gray);
+      padding: 0.5rem 1rem;
+      border-radius: 50px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      transition: var(--transition);
+      margin-top: 1rem;
+      width: 100%;
+      font-weight: 600;
+    }
+
+    .back-button:hover {
+      background: var(--spotify-light-gray);
+      color: var(--spotify-text-light);
+    }
+
+    .disclaimer {
+      background: var(--spotify-light-gray);
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--spotify-gray);
+      text-align: center;
+    }
+
+    .disclaimer-text {
+      font-size: 0.8rem;
+      color: var(--spotify-text-gray);
+      margin-bottom: 0.5rem;
+    }
+
+    .disclaimer-links {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .disclaimer-link {
+      color: var(--spotify-green);
+      text-decoration: none;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: var(--transition);
+    }
+
+    .disclaimer-link:hover {
+      color: var(--spotify-green-hover);
+      text-decoration: underline;
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--spotify-green);
+      color: var(--spotify-black);
+      padding: 0.75rem 1.5rem;
+      border-radius: 50px;
+      font-weight: 600;
+      z-index: 1001;
+      transition: var(--transition);
+      opacity: 0;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @keyframes containerFadeIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes modalPop {
+      to { transform: scale(1); }
+    }
+
+    @keyframes bounce {
+      0%, 20%, 50%, 80%, 100% { transform: translateY(0); }
+      40% { transform: translateY(-10px); }
+      60% { transform: translateY(-5px); }
+    }
+
+    @keyframes moodButtonFadeIn {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInUp {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes playlistReveal {
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes shimmer {
+      0% { left: -100%; }
+      100% { left: 100%; }
+    }
+
+    @media (max-width: 768px) {
+      .mood-grid { grid-template-columns: repeat(3, 1fr); }
+      .share-buttons { flex-direction: column; }
+    }
+
+    @media (max-width: 500px) {
+      .mood-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    @media (max-width: 360px) {
+      .mood-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body data-theme="dark">
+  <div class="welcome-modal" id="welcomeModal">
+    <div class="welcome-content">
+      <div class="welcome-logo">🎧</div>
+      <h2 class="welcome-title">Welcome to MoodTunes</h2>
+      <p class="welcome-text">
+        Discover the perfect Spotify playlist that matches your current vibe. 
+        Just pick your mood and let the music do the rest!
+      </p>
+      <button class="welcome-button" id="startButton">Let's Get Started</button>
+    </div>
+  </div>
+
+  <div class="wrapper">
+    <div class="container">
+      <div class="header">
+        <button class="theme-toggle" id="themeToggle">☀️</button>
+        <h1 class="logo"><span class="logo-icon">🎧</span> MoodTunes</h1>
+        <p class="subtitle">Pick your current vibe and get a Spotify playlist that matches your mood perfectly.</p>
+      </div>
+
+      <div class="content">
+        <div class="step-indicator">
+          <div class="step-dot active" id="step1"></div>
+          <div class="step-dot" id="step2"></div>
+          <div class="step-dot" id="step3"></div>
+        </div>
+
+        <div id="mood-selection">
+          <div class="mood-grid">
+            <button class="mood-button" data-mood="party">
+              <div class="mood-emoji">🥳</div>
+              <div class="mood-label">Party</div>
+            </button>
+            <button class="mood-button" data-mood="chill">
+              <div class="mood-emoji">😌</div>
+              <div class="mood-label">Chill</div>
+            </button>
+            <button class="mood-button" data-mood="sad">
+              <div class="mood-emoji">😭</div>
+              <div class="mood-label">Sad</div>
+            </button>
+            <button class="mood-button" data-mood="confident">
+              <div class="mood-emoji">😎</div>
+              <div class="mood-label">Confident</div>
+            </button>
+            <button class="mood-button" data-mood="sleepy">
+              <div class="mood-emoji">😴</div>
+              <div class="mood-label">Sleepy</div>
+            </button>
+          </div>
+
+          <div class="follow-up-section" id="followUpSection">
+            <h3 class="follow-up-title">How intense is this feeling?</h3>
+            <input type="range" class="intensity-slider" id="intensitySlider" min="1" max="10" value="5">
+            <div style="display: flex; justify-content: space-between; color: var(--spotify-text-gray); font-size: 0.8rem; margin-top: 0.5rem;">
+              <span>Mild</span>
+              <span>Intense</span>
+            </div>
+            <button class="continue-button" id="continueButton">Find My Playlist</button>
+          </div>
+        </div>
+
+        <div id="playlist-reveal" class="playlist-reveal">
+          <div class="playlist-card">
+            <div class="playlist-title" id="playlist-title">Your Perfect Playlist</div>
+            <div class="playlist-description" id="playlist-description">Curated just for your current mood</div>
+            
+            <div class="button-group">
+              <a id="playlist-link" href="#" target="_blank" class="spotify-button">
+                🎵 Open in Spotify
+              </a>
+              
+              <div class="share-buttons">
+                <button class="share-button" id="copyLinkBtn">📋 Copy Link</button>
+                <button class="share-button" id="shareTwitterBtn">🐦 Tweet</button>
+                <button class="share-button" id="shareWhatsAppBtn">💬 WhatsApp</button>
+              </div>
+            </div>
+          </div>
+          <button class="back-button" id="back-button">← Try Another Mood</button>
+        </div>
+      </div>
+
+      <div class="disclaimer">
+        <div class="disclaimer-text">
+          MoodTunes is a demo project with Spotify integration.  
+          Playlist suggestions are pre-curated. No user data is collected, stored, or shared.  
+          This project is not affiliated with or endorsed by Spotify.
+        </div>
+        
+        <div class="disclaimer-links">
+          <a href="#" class="disclaimer-link">Privacy Policy</a>
+          <a href="#" class="disclaimer-link">Terms of Use</a>
+          <a href="https://spotify.com" class="disclaimer-link" target="_blank">Spotify.com</a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+
+    const currentTheme = localStorage.getItem('theme') || 'dark';
+    body.setAttribute('data-theme', currentTheme);
+    themeToggle.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
+
+    themeToggle.addEventListener('click', () => {
+      const newTheme = body.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+      body.setAttribute('data-theme', newTheme);
+      localStorage.setItem('theme', newTheme);
+      themeToggle.textContent = newTheme === 'dark' ? '☀️' : '🌙';
+    });
+    const welcomeModal = document.getElementById('welcomeModal');
+    const startButton = document.getElementById('startButton');
+
+    const hasSeenWelcome = localStorage.getItem('hasSeenWelcome');
+    if (hasSeenWelcome) {
+      welcomeModal.classList.add('hidden');
+    }
+
+    startButton.addEventListener('click', () => {
+      welcomeModal.classList.add('hidden');
+      localStorage.setItem('hasSeenWelcome', 'true');
+    });
+
+    const moods = {
+      party: {
+        mild: { title: '🥳 Yebo! Let us Party!', description: 'Upbeat but chill tracks for a relaxed good time', url: 'https://open.spotify.com/playlist/37i9dQZF1DXaXB8fQg7xif' },
+        intense: { title: '🥳 Ultimate Party Bangers', description: 'High-energy anthems to get the party started', url: 'https://open.spotify.com/playlist/37i9dQZF1DXaXB8fQg7xif' }
+      },
+      chill: {
+        mild: { title: '😌 Soft Chill', description: 'Gentle background music for peaceful moments', url: 'https://open.spotify.com/playlist/37i9dQZF1DX4WYpdgoIcn6' },
+        intense: { title: '😌 Deep Relaxation', description: 'Immersive ambient sounds for total zen', url: 'https://open.spotify.com/playlist/37i9dQZF1DX4WYpdgoIcn6' }
+      },
+      sad: {
+        mild: { title: '😭 Melancholy Moments', description: 'Gentle songs for when you need to feel understood', url: 'https://open.spotify.com/playlist/37i9dQZF1DWVV27DiNWxkR' },
+        intense: { title: '😭 Deep Emotional Journey', description: 'Powerful ballads for processing heavy feelings', url: 'https://open.spotify.com/playlist/37i9dQZF1DWVV27DiNWxkR' }
+      },
+      confident: {
+        mild: { title: '😎 Steady Confidence', description: 'Smooth tracks to keep you feeling good', url: 'https://open.spotify.com/playlist/37i9dQZF1DX1lVhptIYRda' },
+        intense: { title: '😎 Unstoppable Energy', description: 'Power anthems to fuel your inner champion', url: 'https://open.spotify.com/playlist/37i9dQZF1DX1lVhptIYRda' }
+      },
+      sleepy: {
+        mild: { title: '😴 Gentle Lullabies', description: 'Soft melodies for a peaceful drift to sleep', url: 'https://open.spotify.com/playlist/37i9dQZF1DWZd79rJ6a7lp' },
+        intense: { title: '😴 Deep Sleep Sounds', description: 'Ambient soundscapes for the deepest rest', url: 'https://open.spotify.com/playlist/37i9dQZF1DWZd79rJ6a7lp' }
+      }
+    };
+
+    const moodSelection = document.getElementById('mood-selection');
+    const followUpSection = document.getElementById('followUpSection');
+    const playlistReveal = document.getElementById('playlist-reveal');
+    const playlistTitle = document.getElementById('playlist-title');
+    const playlistDescription = document.getElementById('playlist-description');
+    const playlistLink = document.getElementById('playlist-link');
+    const backButton = document.getElementById('back-button');
+    const continueButton = document.getElementById('continueButton');
+    const intensitySlider = document.getElementById('intensitySlider');
+    const toast = document.getElementById('toast');
+
+    const step1 = document.getElementById('step1');
+    const step2 = document.getElementById('step2');
+    const step3 = document.getElementById('step3');
+
+    let selectedMood = null;
+    let currentPlaylistUrl = '';
+
+    document.querySelectorAll('.mood-button').forEach(button => {
+      button.addEventListener('click', () => {
+
+        document.querySelectorAll('.mood-button').forEach(btn => btn.classList.remove('selected'));
+        
+        button.classList.add('selected');
+        selectedMood = button.getAttribute('data-mood');
+
+        step1.classList.remove('active');
+        step2.classList.add('active');
+        
+        followUpSection.classList.add('show');
+        
+        setTimeout(() => {
+          followUpSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 200);
+      });
+    });
+
+    continueButton.addEventListener('click', () => {
+      if (!selectedMood) return;
+
+      const intensity = parseInt(intensitySlider.value);
+      const intensityType = intensity <= 5 ? 'mild' : 'intense';
+      const playlistData = moods[selectedMood][intensityType];
+
+      step2.classList.remove('active');
+      step3.classList.add('active');
+
+      playlistTitle.textContent = playlistData.title;
+      playlistDescription.textContent = playlistData.description;
+      playlistLink.href = playlistData.url;
+      currentPlaylistUrl = playlistData.url;
+
+      moodSelection.style.display = 'none';
+      playlistReveal.classList.add('show');
+    });
+
+    backButton.addEventListener('click', () => {
+      playlistReveal.classList.remove('show');
+      followUpSection.classList.remove('show');
+      moodSelection.style.display = 'block';
+      
+      step2.classList.remove('active');
+      step3.classList.remove('active');
+      step1.classList.add('active');
+      
+      document.querySelectorAll('.mood-button').forEach(btn => btn.classList.remove('selected'));
+      selectedMood = null;
+    });
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add('show');
+      setTimeout(() => {
+        toast.classList.remove('show');
+      }, 3000);
+    }
+
+    document.getElementById('copyLinkBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(currentPlaylistUrl).then(() => {
+        showToast('Playlist link copied to clipboard!');
+      }).catch(() => {
+        showToast('Could not copy link');
+      });
+    });
+
+    document.getElementById('shareTwitterBtn').addEventListener('click', () => {
+      const text = `Check out this ${playlistTitle.textContent} playlist I found on MoodTunes! 🎵`;
+      const url = `https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(currentPlaylistUrl)}`;
+      window.open(url, '_blank');
+    });
+
+    document.getElementById('shareWhatsAppBtn').addEventListener('click', () => {
+      const text = `Check out this ${playlistTitle.textContent} playlist I found on MoodTunes! 🎵 ${currentPlaylistUrl}`;
+      const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      window.open(url, '_blank');
+    });
+  </script>
+</body>
+</html>
