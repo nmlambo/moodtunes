@@ -8,7 +8,7 @@ This was built as part of the **Bespoke x Spotify Assessment** to showcase UI/UX
 
 ## 🚀 Live Demo
 
-👉 [https://moodtunes.vercel.app](https://moodtunes.vercel.app)
+👉 [[https://moodtunes.vercel.app](https://moodtunes-six.vercel.app/)](https://moodtunes.vercel.app)
 
 ---
 
